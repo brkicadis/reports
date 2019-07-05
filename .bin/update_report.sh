@@ -8,5 +8,5 @@ python .bin/process.py
 
 git add docs/index.html
 git commit -m "[skip ci] Update docs/index.html file with latest test results"
-git push https://github.com/$TRAVIS_REPO_SLUG HEAD:master
+git push https://$GITHUB@github.com/$TRAVIS_REPO_SLUG HEAD:master
 echo "Successfully updated RESULTS file"

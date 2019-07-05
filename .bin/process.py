@@ -2,6 +2,7 @@ import os
 from junitparser import JUnitXml
 from datetime import datetime
 from string import Template
+from random import randint
 
 REPORT_FILE_NAME = 'report.xml'
 INDEX_TEMPLATE_FILE = os.path.join(os.getcwd(), 'docs', 'index_template.html')
@@ -12,15 +13,17 @@ FULL_REPORT_LINK = "https://rawcdn.githack.com/" \
 FAILED_TEST = '<span style="color:red">FAIL</span>'
 PASSED_TEST = '<span style="color:green">PASS</span>'
 DATE_FOLDER_FORMAT = '%Y-%m-%d'
-HTML_TABLE_HEADER_LINES = '<h2><b>Current status of acceptance tests</b><h2>\n'
-HTML_TABLE_HEADER_CONTENT = '''<table class="blueTable">
-<thead>
-<tr>
-<th>Project</th>
-<th>Test Name</th>
-<th>Status</th>
-<th>Report link</th>
-</tr></thead>'''
+HTML_TABLE_HEADER_HTML = '''<!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <title>Wirecard Gateway Test Results</title>
+                                    <link href="https://file.myfontastic.com/YtqivGkm3YfAnbEZneHr89/icons.css" rel="stylesheet"/>
+                                    <link href="../.bin/simple.css" rel="stylesheet"/>
+                                </head>
+                                <body>
+                                    <main>'''
+HTML_TABLE_HEADER_CONTENT = ''''''
 
 IGNORE_FOLDERS = [".bin", "docs", ".git", ".idea"]
 REPORT_LINK_DATA = {}
@@ -107,25 +110,88 @@ def reformat_dictionary(dictionary):
 
 
 def create_report_file():
+    number = 0
     results = process_results_files()
     # create contents to put into html template
-    html_table = HTML_TABLE_HEADER_LINES
+    html_table = HTML_TABLE_HEADER_HTML
+
     for gateway, project_results in sorted(results.items()):
-        html_table += "<h3>{}<h3>\n".format(gateway)
+        number += 1
         html_table += HTML_TABLE_HEADER_CONTENT
+        html_table += '''<input id="tab{}" type="radio" name="tabs" checked>
+                         <label for="tab{}">{}</label>'''.format(number, number, gateway)
+
+    number = 0
+    for gateway, project_results in sorted(results.items()):
+        duplicate = None
+        number += 1
+        html_table += '''<section id="content{}">
+                            <div class="row">'''.format(number)
+        pop_up = randint(0, 500)
         for project in sorted(project_results):
             for project_name, test_results in sorted(project.items()):
-                for test_name, test_result in sorted(test_results.items()):
-                    date = get_date_from_report_link_data(project_name, gateway)
-                    report_link = Template(FULL_REPORT_LINK).substitute({"project": project_name,
-                                                                         "gateway": gateway,
-                                                                         "date": date})
-                    html_table += '<tr>'
-                    for value in [project_name, test_name, test_result,
-                                  '<a href="{}">Full report link</a></td>'.format(report_link)]:
-                        html_table += '<td>{}</td>'.format(value)
-                    html_table += '</tr>'
-        html_table += '</table>'
+
+                if project_name != 'paymentSDK-php':
+                    get_version = project_name.split('-')
+                    if duplicate != get_version[0] and duplicate is not None:
+                        html_table += '''</div>    
+                                    </div>
+                                </div>'''
+                    if duplicate != get_version[0]:
+                        html_table += '''<div class="column">
+                                            <div class="card">
+                                                <h3>{}</h3>
+                                                <div class="flex-grid-thirds">'''.format(get_version[0].capitalize())
+                        duplicate = get_version[0]
+                    pop_up += 1
+                    html_table += '''<div class="col">
+                                                <a href="#popup{}">{}</a></div>'''.format(pop_up, get_version[2])
+                    html_table += '<div id="popup{}" class="overlay"><div class="popup"><a class="close" href="#">&times;</a><table><tr>'.format(pop_up)
+                    for test_name, test_result in sorted(test_results.items()):
+
+                        date = get_date_from_report_link_data(project_name, gateway)
+                        report_link = Template(FULL_REPORT_LINK).substitute({"project": project_name,
+                                                                             "gateway": gateway,
+                                                                             "date": date})
+
+                        for value in [test_name, test_result,
+                                      '<td><a href="{}">Full report link</a></td>'.format(report_link)]:
+                            html_table += '<td>{}</td>'.format(value)
+                    html_table += '</tr></table></div></div>'
+                else:
+                    if duplicate != project_name and duplicate is not None:
+                        html_table += '''</div>    
+                                    </div>
+                                </div>'''
+                    if duplicate != project_name:
+                        html_table += '''<div class="column">
+                                            <div class="card">
+                                                <h3>{}</h3>
+                                                <div class="flex-grid-thirds">'''.format(project_name.capitalize())
+                        duplicate = project_name
+
+                    html_table += '''<div class="col">
+                                                <a href="#popup{}">Results</a></div>'''.format(pop_up)
+                    html_table += '<div id="popup{}" class="overlay"><div class="popup"><a class="close" href="#">&times;</a>'.format(pop_up)
+                    for test_name, test_result in sorted(test_results.items()):
+                        date = get_date_from_report_link_data(project_name, gateway)
+                        report_link = Template(FULL_REPORT_LINK).substitute({"project": project_name,
+                                                                             "gateway": gateway,
+                                                                             "date": date})
+                        for value in [test_name, test_result,
+                                      '<a href="{}">Full report link</a>'.format(report_link)]:
+                            html_table += '<p>{}</p>'.format(value)
+                    html_table += '</div></div>'
+        html_table += '''</div>    
+                                    </div>
+                                </div>'''
+
+        html_table += '''</div>
+                       </section>'''
+
+    html_table += '''</main>
+                </body>
+            </html>'''
     # put data into html template
     with open(INDEX_TEMPLATE_FILE, 'r') as template_file:
         src = Template(template_file.read())

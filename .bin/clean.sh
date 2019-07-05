@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e # Exit with nonzero exit code if anything fails
 REPO_NAME='reports'
-REPO_LINK="https://github.com/wirecard/${REPO_NAME}"
+REPO_LINK="https://github.com/brkicadis/${REPO_NAME}"
 REPO_ADDRESS="${REPO_LINK}.git"
 TODAY=$(date +%Y-%m-%d)
 TWO_WEEKS_AGO=$(date -d 'now - 1 week' +%Y-%m-%d)
@@ -27,4 +27,4 @@ done
 git add -A
 git diff-index --quiet HEAD || git commit -m "Clean up old report files. Travis build: ${TRAVIS_BUILD_WEB_URL}"
 
-git push https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git master
+git push https://${GITHUB}@github.com/${TRAVIS_REPO_SLUG}.git master
