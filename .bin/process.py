@@ -77,7 +77,6 @@ def process_results_file(gateway, result_file):
             if case.result:
                 features[feature_name] = FAILED_TEST
     gateway_res[gateway] = features
-    print(gateway_res)
     return gateway_res
 
 
@@ -86,7 +85,6 @@ def process_results_files():
     root_dir = os.getcwd()
     for dir in os.listdir(root_dir):
         if dir not in IGNORE_FOLDERS and os.path.isdir(dir):
-            print dir
             project = dir
             gateway_results = []
             for sub_dirs in os.listdir(os.path.join(root_dir, dir)):
@@ -193,6 +191,7 @@ def create_report_file():
                 </body>
             </html>'''
     # put data into html template
+    print html_table
     with open(INDEX_TEMPLATE_FILE, 'r') as template_file:
         src = Template(template_file.read())
         new_text = src.substitute({"table": html_table})
